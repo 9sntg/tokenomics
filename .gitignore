@@ -1,0 +1,21 @@
+/target
+**/*.rs.bk
+Cargo.lock.bak
+
+# repo-local dev config override (machine-specific paths; real config lives in ~/.config/tokenomics/)
+/tokenomics.toml
+
+# local runtime store (SQLite WAL)
+*.db
+*.db-wal
+*.db-shm
+
+# editor / OS cruft
+.DS_Store
+*.swp
+
+# agent runtime / local session state
+.claude/
+
+# time-stamped handoff notes (kept on disk, not part of the public release)
+docs/handoff/

@@ -1,0 +1,29 @@
+name: Feature request
+description: Suggest an idea or improvement
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This is a passively maintained personal daily-driver. Good ideas are welcome; please open an
+        issue to discuss before starting a large PR.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: Describe the use case or pain point, not just the solution.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behaviour
+      description: What would you like `tok` to do?
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+    validations:
+      required: false

@@ -1,0 +1,24 @@
+# Starter tokenomics.toml — written by `tok init`. Edit to add your accounts, then run
+# `tok validate` to check it. Lives at ~/.config/tokenomics/tokenomics.toml ($TOKENOMICS_CONFIG overrides).
+
+[settings]
+poll_local_secs = 10      # ccusage/local poll cadence
+poll_overlay_secs = 300   # overlay poll cadence (only used by accounts with the overlay on)
+warn_pct = 75.0           # window utilization % → warning
+crit_pct = 90.0           # window utilization % → critical
+
+[[account]]
+id = "claude-personal"
+label = "Personal"
+provider = "claude"
+config_dir = "~/.claude"  # this account's CLAUDE_CONFIG_DIR — attribution comes from the dir
+limits_overlay = false    # opt-in, OFF by default — see the README overlay notice (undocumented
+                          # Anthropic endpoint; using your OAuth token there is at your own ToS risk)
+
+# A second provider — Codex reads its local sessions tree under CODEX_HOME.
+# Uncomment and adjust to monitor an OpenAI Codex subscription too:
+# [[account]]
+# id = "codex-work"
+# label = "Codex"
+# provider = "codex"
+# config_dir = "~/.codex"

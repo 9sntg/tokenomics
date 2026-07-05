@@ -1,0 +1,18 @@
+---
+source: src/tui/view.rs
+expression: "draw(&board(), 42, 14)"
+---
+TOKENOMICS  ·  3 acct · notional          
+▲ 2 over warn                             
+280.54M · $335n · 271.20M/h · usage 8s ago
+burn · all accts ▁▂▁▄▃▆▅█                 
+▏  Personal [claude]              ● 42% ok
+▏5h ████████░░░░░░░░░░░ 42% 1h 11m        
+▏wk n/a (enable overlay)                  
+▊▶ Primary [claude]             ▲ 76% warn
+▊5h ██████████████▌░░░░ 76% 1h 11m        
+▊wk n/a (enable overlay)                  
+▏  Research [claude]            ✖ 93% crit
+▏5h █████████████████▋░ 93% 1h 11m        
+▏wk n/a (enable overlay)                  
+↑↓ move · i inactive · ? help · q quit

@@ -1,0 +1,65 @@
+[package]
+name = "tokenomics"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.96"
+description = "A terminal dashboard for LLM subscription accounts: token usage, limit % utilization, and time-to-reset."
+license = "MIT OR Apache-2.0"
+readme = "README.md"
+keywords = ["tui", "cli", "claude", "usage", "monitoring"]
+categories = ["command-line-utilities"]
+repository = "https://github.com/eletrixa/tokenomics"
+publish = false
+
+[[bin]]
+name = "tok"
+path = "src/main.rs"
+
+[lints.rust]
+unsafe_code = "forbid"
+missing_debug_implementations = "warn"
+rust_2018_idioms = { level = "warn", priority = -1 }
+# unreachable_pub intentionally omitted: this is a bin crate (no lib consumers), so it would
+# demand pub(crate) on every item — pure noise. Visibility discipline is covered by review.
+
+[lints.clippy]
+all = { level = "deny", priority = -1 }
+pedantic = { level = "deny", priority = -1 }
+# Curated allows — each justified:
+module_name_repetitions = "allow"   # e.g. providers::ProviderError reads fine
+missing_errors_doc = "allow"        # error enums are self-describing in this crate
+missing_panics_doc = "allow"        # panics are limited to test code
+must_use_candidate = "allow"        # this is a bin crate, not a public library API
+doc_markdown = "allow"              # prose docs reference tool/format names (ccusage, TOML, JSON) freely
+
+[profile.release]
+strip = true
+lto = "thin"
+
+# Runtime dependencies are added per-wave as they are first used (spec-driven TDD), so early
+# builds stay fast and every dependency is justified by a landed feature.
+[dependencies]
+async-trait = "0.1.89"                                    # W2: object-safe async trait methods (Runner, ProviderAdapter)
+crossterm = { version = "0.29.0", features = ["event-stream"] } # W6: terminal backend + async key events
+directories = "6.0.0"
+futures = "0.3.32"                                        # W6: EventStream::next in the TUI loop
+jiff = { version = "0.2.15", features = ["serde"] }       # W2: reset countdowns / window math (Timestamp)
+notify-rust = "4.11.7"                                    # W8: best-effort desktop notifications
+ratatui = "0.30.2"                                        # W6: TUI widgets (Gauge/Sparkline/Layout)
+reqwest = { version = "0.12.16", default-features = false, features = ["rustls-tls"] } # W7: opt-in overlay (HTTPS via rustls)
+rusqlite = { version = "0.32.1", features = ["bundled"] } # W4: local store (bundled SQLite, WAL)
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.145"                                    # W2: parse ccusage `blocks --json`
+thiserror = "2.0.18"
+tokio = { version = "1.48.0", features = ["rt-multi-thread", "macros", "process", "time", "io-util", "sync", "signal"] }
+toml = "1.1.2"
+
+[dev-dependencies]
+assert_cmd = "2.2.2"
+insta = "1.48.0"                                          # W6: TUI snapshot tests
+predicates = "3.1.4"
+tempfile = "3.27.0"
+# Test-only: `test-util` unlocks tokio's paused clock (`#[tokio::test(start_paused = true)]`) for the
+# collector cadence-recreation test (spec 015 acceptance 2). Feature-unioned into test builds only —
+# the shipped binary's tokio features are unchanged.
+tokio = { version = "1.48.0", features = ["test-util"] }

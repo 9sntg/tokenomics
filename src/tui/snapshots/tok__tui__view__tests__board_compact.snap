@@ -1,0 +1,20 @@
+---
+source: src/tui/view.rs
+expression: "draw(&board(), 80, 16)"
+---
+TOKENOMICS  ·  3 acct  ·  cost notional (proxy, not a bill)                     
+▲  2 account(s) at or above the warn threshold                                  
+280.54M · $335.95 (notional) · 271.20M/h · usage 8s ago · derived               
+burn · all accts ▁▂▁▄▃▆▅█                                                       
+▏  Personal [claude]                                                    ● 42% ok
+▏5h ███████████████████▍░░░░░░░░░░░░░░░░░░░░░░░░░░ 42% ok · resets in 1h 11m    
+▏wk n/a (enable overlay)                                                        
+                                                                                
+▊▶ Primary [claude]                                                   ▲ 76% warn
+▊5h ███████████████████████████████████░░░░░░░░░░░ 76% warn · resets in 1h 11m  
+▊wk n/a (enable overlay)                                                        
+                                                                                
+▏  Research [claude]                                                  ✖ 93% crit
+▏5h ██████████████████████████████████████████▊░░░ 93% crit · resets in 1h 11m  
+▏wk n/a (enable overlay)                                                        
+↑/↓ (or j/k) move · r refresh · i inactive · ? help · q quit

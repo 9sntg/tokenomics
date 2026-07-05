@@ -1,0 +1,48 @@
+name: Bug report
+description: Something isn't working as expected
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. Please do **not** include OAuth tokens, credentials, or the contents
+        of any `.credentials.json` — `tok` never needs them to diagnose a bug.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you expect, and what did you get instead?
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Config: ...
+        2. Ran `tok ...`
+        3. Saw ...
+    validations:
+      required: true
+  - type: textarea
+    id: doctor
+    attributes:
+      label: "`tok doctor` output"
+      description: Paste the output of `tok doctor` (it's read-only and prints no secrets).
+      render: text
+    validations:
+      required: false
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Output of `tok --version`.
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: OS / environment
+      placeholder: e.g. Ubuntu 24.04, WSL2, macOS 15
+    validations:
+      required: true
