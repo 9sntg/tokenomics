@@ -298,6 +298,14 @@ fn report_config_dir(account: &crate::domain::Account) {
 }
 
 fn report_credentials(account: &crate::domain::Account, now_ms: i64) {
+    // No file is a STATE, not a failure — on macOS it is the by-design state (the token lives in
+    // the Keychain and the overlay is unsupported here). Rendering it via the AppError path would
+    // print "credentials error: …", which reads like a bug to fix — and the "fix" would be a
+    // not-permitted feature (spec 014).
+    if !account.config_dir.join(".credentials.json").exists() {
+        println!("  credentials: {}", creds::no_source_note());
+        return;
+    }
     match creds::read_token(&account.config_dir) {
         Ok(token) => {
             let state = if token.is_warm(now_ms) {

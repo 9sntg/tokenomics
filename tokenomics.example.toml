@@ -1,5 +1,7 @@
 # Starter tokenomics.toml — written by `tok init`. Edit to add your accounts, then run
-# `tok validate` to check it. Lives at ~/.config/tokenomics/tokenomics.toml ($TOKENOMICS_CONFIG overrides).
+# `tok validate` to check it. Lives in your platform's config dir — `tok init` prints the exact
+# path (Linux: ~/.config/tokenomics/, macOS: ~/Library/Application Support/tokenomics/).
+# $TOKENOMICS_CONFIG overrides it.
 
 [settings]
 poll_local_secs = 10      # ccusage/local poll cadence

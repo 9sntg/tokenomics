@@ -37,8 +37,8 @@ accounts) are the only prerequisites.
 ## Quick start
 
 ```bash
-tok init          # write a starter tokenomics.toml to ~/.config/tokenomics/
-$EDITOR ~/.config/tokenomics/tokenomics.toml   # add your accounts
+tok init          # write a starter tokenomics.toml — prints the exact path it used
+$EDITOR <that path>                           # add your accounts
 tok collector     # run the background collector (writes the local store)
 tok               # launch the dashboard
 ```
@@ -46,7 +46,8 @@ tok               # launch the dashboard
 Other commands: `tok validate` (check the config), `tok accounts` (list what's configured),
 `tok once --json` (one snapshot per account as JSON), `tok doctor` (diagnostics).
 
-Paths are cwd-independent: config at `~/.config/tokenomics/tokenomics.toml`, store at
+Paths are cwd-independent and platform-native — Linux `~/.config/tokenomics/`, macOS
+`~/Library/Application Support/tokenomics/`; `tok init` prints the resolved path. Config at
 `~/.local/share/tokenomics/tokenomics.db`. Override either with `$TOKENOMICS_CONFIG` /
 `$TOKENOMICS_DB` for local development.
 
@@ -114,6 +115,18 @@ them through an **opt-in overlay** — but you should understand what that means
 When the overlay is off — or when it hits a 429/failure — `tok` degrades silently to local,
 provenance-tagged estimates. The local plane is the ToS-safe core; the overlay is a labeled extra
 you consciously opt into per account.
+
+### Platforms
+
+`tok` runs on **Linux and macOS**. The local plane — token usage, notional cost, burn rate and the
+reconstructed 5h window — is identical on both and needs no network.
+
+**On macOS the overlay is unsupported, by design.** Claude Code stores the OAuth token in the
+**Keychain** rather than `<config_dir>/.credentials.json`, and `tok` deliberately does not read it:
+the token's only use here is the overlay above, which Anthropic's terms don't permit. The practical
+effect is that the weekly window shows `wk n/a` — the 5h window, usage and cost are unaffected. To
+check a weekly limit, use Claude Code's own `/status`, which is the official client. `tok doctor`
+states this rather than reporting a missing file as an error.
 
 ## Cost framing
 

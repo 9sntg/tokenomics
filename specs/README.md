@@ -20,6 +20,7 @@ Status: **Draft** (don't implement) → **Active** (implement against this) → 
 | 011 | [refresh-freshness-hardening](011-refresh-freshness-hardening.md) | collector liveness + local-plane freshness + degrade-to-derived + concurrent overlay + bounded aggregate/retention | Done |
 | 012 | [waiting-for-reset](012-waiting-for-reset.md) | expired limits render "waiting for reset" + stop alarming; idle/failed collects still re-evaluate | Done |
 | 013 | [codex-provider](013-codex-provider.md) | Codex adapter: sessions-JSONL usage + `codex app-server` rate-limits overlay | Done |
+| 014 | [macos-support](014-macos-support.md) | macOS: overlay unsupported by design (Keychain) + honest doctor + path docs | Draft |
 | 014 | [hide-inactive-accounts](014-hide-inactive-accounts.md) | `active = false` accounts: unmonitored, hidden by default, `i` to peek | Done |
 | 015 | [config-hot-reload](015-config-hot-reload.md) | collector + TUI hot-reload config on change; doctor flags config/binary divergence; age-aware overlay hint | Done |
 | 016 | [init-subcommand](016-init-subcommand.md) | `tok init` writes a starter `tokenomics.toml` (never clobbers); embedded from `tokenomics.example.toml`; missing-config commands hint at `tok init` | Done |

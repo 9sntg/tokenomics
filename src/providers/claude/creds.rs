@@ -13,6 +13,14 @@
 //! - The access token is a SECRET: `TokenInfo`'s `Debug` redacts it; it never enters a log, error,
 //!   or the store. Error messages never include the file bytes (which contain the token).
 //! - Read-only: we reuse Claude Code's token passively; we never write the credentials file here.
+//! - **macOS has no credentials file, and we deliberately do not read the Keychain** (spec 014).
+//!   Claude Code stores the token there (service `Claude Code-credentials`); its payload has the
+//!   same shape this module parses, so a port would be small. It is declined on purpose: the
+//!   token's only consumer is the opt-in `/api/oauth/usage` overlay, which the README documents
+//!   as NOT PERMITTED under Anthropic's 2026 Consumer-Terms clarification. Reading it would be
+//!   code whose sole purpose is easing a not-permitted action.
+//! - Only the ABSENT-file message is platform-aware (`no_source_note`) — reading stays identical
+//!   everywhere, so the overlay's own tests (which write a real file) run unchanged on macOS.
 
 use std::path::Path;
 
@@ -78,13 +86,40 @@ pub fn parse_credentials(bytes: &[u8]) -> AppResult<TokenInfo> {
 }
 
 /// Read and parse `<config_dir>/.credentials.json`, requiring owner-only file mode on Unix.
+///
+/// Cross-platform on purpose: if a file is there, it is read the same way everywhere. Only the
+/// ABSENT case differs — on macOS there is no such file by design, and `cannot stat …` would read
+/// like a bug to fix (spec 014). See `no_source_note`.
 pub fn read_token(config_dir: &Path) -> AppResult<TokenInfo> {
     let path = config_dir.join(".credentials.json");
+    if !path.exists() {
+        return Err(AppError::Credentials(no_source_note().to_string()));
+    }
     require_owner_only(&path)?;
     let bytes = std::fs::read(&path).map_err(|e| {
         AppError::Credentials(format!("cannot read {}: {}", path.display(), e.kind()))
     })?;
     parse_credentials(&bytes)
+}
+
+/// Why there is no credentials file — the one place that knows the platform.
+///
+/// macOS: Claude Code keeps the token in the Keychain (service `Claude Code-credentials`). We
+/// deliberately do NOT read it — the token's only consumer is the opt-in `/api/oauth/usage`
+/// overlay, which the README documents as NOT PERMITTED under Anthropic's 2026 Consumer-Terms
+/// clarification. So this states the situation and stops: it names neither a path that cannot
+/// exist here nor a recipe for extracting the token.
+#[cfg(target_os = "macos")]
+pub const fn no_source_note() -> &'static str {
+    "n/a on macOS — Claude Code keeps the token in the Keychain; the overlay is unsupported here \
+     and the local plane needs none"
+}
+
+/// Elsewhere the file is simply absent: the account never logged in, or the overlay was never
+/// wanted. Either way the local plane is unaffected.
+#[cfg(not(target_os = "macos"))]
+pub const fn no_source_note() -> &'static str {
+    "absent — the overlay needs <config_dir>/.credentials.json; the local plane does not"
 }
 
 /// Refuse a credentials file that is group/world-accessible (Unix only). A leaked token is a P0.
@@ -150,6 +185,29 @@ mod tests {
     #[test]
     fn missing_oauth_block_is_an_error() {
         assert!(parse_credentials(br#"{"other":1}"#).is_err());
+    }
+
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn macos_read_token_names_the_keychain_not_a_phantom_file() {
+        // Spec 014. The old path produced `cannot stat ~/.claude/.credentials.json: entity not
+        // found` — a file macOS was never going to have, which reads as a bug to fix. The "fix"
+        // would be reading the Keychain to feed a NOT-PERMITTED overlay, so the message must
+        // explain instead of alarm.
+        let err = read_token(Path::new("/Users/user/.claude")).unwrap_err();
+        let msg = format!("{err}");
+        assert!(
+            msg.contains("Keychain"),
+            "must name where the token actually lives: {msg}"
+        );
+        assert!(
+            !msg.contains("cannot stat") && !msg.contains(".credentials.json"),
+            "must not point at a file that cannot exist here: {msg}"
+        );
+        assert!(
+            !msg.contains("security find-generic-password"),
+            "must not hand out a recipe for extracting the token"
+        );
     }
 
     #[test]

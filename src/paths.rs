@@ -81,7 +81,12 @@ pub fn store_path() -> AppResult<PathBuf> {
     Ok(path)
 }
 
-/// The XDG config/data directory for this app (`~/.config/tokenomics`, `~/.local/share/tokenomics`).
+/// The platform config/data directory for this app, via `directories::ProjectDirs`:
+/// - Linux: `~/.config/tokenomics`, `~/.local/share/tokenomics`
+/// - macOS: `~/Library/Application Support/tokenomics` for both
+///
+/// Not "XDG" — that is the Linux answer only. Hardcoding it in docs sent macOS users to a path
+/// that does not exist (spec 014); `tok init`/`validate`/`doctor` print the resolved path.
 fn xdg_dir(base: &Base) -> AppResult<PathBuf> {
     let dirs = directories::ProjectDirs::from("", "", "tokenomics").ok_or(AppError::NoConfigDir)?;
     Ok(match base {

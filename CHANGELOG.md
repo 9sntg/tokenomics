@@ -6,6 +6,36 @@ Agents maintain the `[Unreleased]` section as work lands; **only the user cuts a
 
 ## [Unreleased]
 
+- **macOS support: the overlay is unsupported here, and now says so (spec 014)** — `tok` already
+  worked on macOS; the local plane (usage, notional cost, burn, the reconstructed 5h window) needs
+  no port, since paths resolve per-platform, the store is SQLite and `ccusage` is cross-platform.
+  The one platform difference is the OAuth token: Claude Code keeps it in the **macOS Keychain**,
+  not `<config_dir>/.credentials.json`.
+  - **We deliberately do not read the Keychain.** The token's only consumer is the opt-in
+    `/api/oauth/usage` overlay, which this README documents as NOT PERMITTED under Anthropic's 2026
+    Consumer-Terms clarification, with enforcement precedent. A Keychain reader would be code whose
+    sole purpose is easing a not-permitted action. Verified separately that the Keychain item is
+    keyed by macOS **user**, not by config dir — so a naive reader would also hand one account's
+    token to every configured account, silently querying account A's limits as account B.
+  - `tok doctor` previously printed `credentials: cannot stat …/.credentials.json: entity not
+    found`, which reads like a bug to fix — and the "fix" would be that not-permitted feature. It
+    now states the situation: `credentials: n/a on macOS — Claude Code keeps the token in the
+    Keychain; the overlay is unsupported here and the local plane needs none`.
+  - Only the **absent-file message** is platform-aware. Reading is unchanged everywhere, so the
+    overlay's own tests (which write a real credentials file) run unchanged on macOS.
+  - The weekly window reads `wk n/a` on macOS; the safe way to see a weekly limit is Claude Code's
+    own `/status`.
+
+- **Fixed: the docs sent macOS users to a config path that doesn't exist** — README, CLAUDE.md, the
+  starter config and `paths.rs`'s doc comment all hardcoded `~/.config/tokenomics/`. `directories::
+  ProjectDirs` resolves to `~/Library/Application Support/tokenomics/` on macOS, so that advice was
+  simply wrong there. The docs now name both and point at `tok init`, which prints the resolved path.
+
+- **Fixed: stale CLAUDE.md claims** — "Built for WSL2" (it is cross-platform), and a git rule
+  reading "Default branch: `dev`. Never push directly to `main`" when no `dev` branch exists on the
+  remote and `main` is the default.
+
+
 ### ADDED
 - **`tok init` writes a starter config (spec 016).** On a fresh machine every command used to fail
   with a bare `cannot read config …` and no next step. `tok init` now writes a commented starter
