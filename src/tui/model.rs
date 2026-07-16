@@ -458,6 +458,36 @@ pub struct AccountData<'a> {
 /// collector's first pending pass is called stalled.
 const OVERLAY_STALL_MS: i64 = 15 * 60 * 1000;
 
+/// The account-row status when the overlay's token is stale/absent.
+///
+/// macOS: "open Claude to refresh" cannot work — Claude Code refreshes into the Keychain, not
+/// into the credentials file this reads, so the state would never clear (spec 014). Only
+/// reachable on macOS if an account opted into the overlay, which is unsupported here anyway.
+#[cfg(target_os = "macos")]
+const STALE_TOKEN_STATUS: &str = "overlay unsupported on macOS (token is in the Keychain)";
+#[cfg(not(target_os = "macos"))]
+const STALE_TOKEN_STATUS: &str = "token stale — open Claude to refresh";
+
+/// The weekly hint when the overlay is OFF.
+///
+/// macOS: enabling it changes nothing — Claude Code keeps the token in the Keychain and `tok`
+/// deliberately does not read it (spec 014), so there is no token source to enable. Nudging
+/// "enable overlay" would point the user at a feature that cannot work here AND that Anthropic's
+/// terms do not permit.
+#[cfg(target_os = "macos")]
+const WEEKLY_OFF_HINT: &str = "n/a (unsupported on macOS)";
+#[cfg(not(target_os = "macos"))]
+const WEEKLY_OFF_HINT: &str = "n/a (enable overlay)";
+
+/// The weekly hint when the overlay is ON but the token is stale/absent.
+///
+/// macOS: "open Claude" is wrong advice — Claude Code would refresh the token into the Keychain,
+/// not into the credentials file this reads, so the state would never change (spec 014).
+#[cfg(target_os = "macos")]
+const WEEKLY_NO_TOKEN_HINT: &str = "n/a (no token on macOS — Keychain)";
+#[cfg(not(target_os = "macos"))]
+const WEEKLY_NO_TOKEN_HINT: &str = "n/a (token stale — open Claude)";
+
 /// Build one account's display-ready row from its stored data. Pure (`now` injected).
 pub fn build_account_view(
     account: &Account,
@@ -508,7 +538,7 @@ pub fn build_account_view(
     // render once on the fleet header line — see `build_fleet_view` / `account_usage`. This per-account
     // row keeps only what differs between accounts: its gauges, status, and severity.
     let status = if token_status == Some(TokenStatus::Stale) {
-        Some("token stale — open Claude to refresh".to_string())
+        Some(STALE_TOKEN_STATUS.to_string())
     } else {
         match snapshot {
             None => Some("no data yet".to_string()),
@@ -528,6 +558,7 @@ pub fn build_account_view(
 
     // The weekly fallback must not nudge "enable overlay" at an account that already opted in —
     // when the overlay is on but absent, the honest reasons are a stale token or a pending pass.
+    // On macOS neither default nudge is true; see WEEKLY_OFF_HINT / WEEKLY_NO_TOKEN_HINT.
     let overlay_stalled = overlay_failing_since
         .is_some_and(|since| now.as_millisecond().saturating_sub(since) >= OVERLAY_STALL_MS);
     // A past overlay success that has since gone quiet with no *failed* attempt recorded (the
@@ -539,9 +570,9 @@ pub fn build_account_view(
     let overlay_silent_since_ms =
         overlay_ms.filter(|&ms| now.as_millisecond().saturating_sub(ms) > OVERLAY_STALL_MS);
     let weekly_hint = if !account.limits_overlay {
-        "n/a (enable overlay)".to_string()
+        WEEKLY_OFF_HINT.to_string()
     } else if token_status == Some(TokenStatus::Stale) {
-        "n/a (token stale — open Claude)".to_string()
+        WEEKLY_NO_TOKEN_HINT.to_string()
     } else if overlay_stalled {
         // Warm token, opted in, but the overlay has failed every pass for a while — the account's
         // subscription is likely gone/blocked (a dead sub 429s /api/oauth/usage indefinitely).
@@ -1244,6 +1275,73 @@ mod tests {
             .expect("scoped")
             .label()
             .starts_with("Fable 92% crit · resets "));
+    }
+
+    #[test]
+    fn weekly_hint_when_the_overlay_is_off_never_nudges_toward_something_unusable() {
+        // Spec 014. These two arms were the only unpinned hints, which is why changing them broke
+        // nothing — the gap this test closes.
+        let now: Timestamp = "2026-07-04T12:00:00Z".parse().unwrap();
+        let off = Account {
+            active: true,
+            limits_overlay: false,
+            ..account()
+        };
+        let data = AccountData {
+            snapshot: None,
+            limits: &[],
+            token_status: None,
+            overlay_failing_since: None,
+            overlay_ms: None,
+        };
+        let row = build_account_view(&off, data, now, true);
+        assert_eq!(row.weekly_hint, WEEKLY_OFF_HINT);
+
+        #[cfg(target_os = "macos")]
+        {
+            // Enabling it changes nothing here (no token source) and the overlay is not permitted
+            // anyway — the hint must not send the user after it.
+            assert!(!row.weekly_hint.contains("enable"), "{}", row.weekly_hint);
+            assert!(row.weekly_hint.contains("macOS"), "{}", row.weekly_hint);
+        }
+        #[cfg(not(target_os = "macos"))]
+        assert_eq!(row.weekly_hint, "n/a (enable overlay)");
+    }
+
+    #[test]
+    fn a_stale_token_never_advises_something_that_cannot_help() {
+        // On macOS "open Claude to refresh" is false advice: Claude refreshes into the Keychain,
+        // not into the file this reads, so the state would never clear (spec 014).
+        let now: Timestamp = "2026-07-04T12:00:00Z".parse().unwrap();
+        let opted_in = Account {
+            active: true,
+            limits_overlay: true,
+            ..account()
+        };
+        let data = AccountData {
+            snapshot: None,
+            limits: &[],
+            token_status: Some(TokenStatus::Stale),
+            overlay_failing_since: None,
+            overlay_ms: None,
+        };
+        let row = build_account_view(&opted_in, data, now, true);
+        assert_eq!(row.weekly_hint, WEEKLY_NO_TOKEN_HINT);
+        assert_eq!(row.status.as_deref(), Some(STALE_TOKEN_STATUS));
+
+        #[cfg(target_os = "macos")]
+        {
+            assert!(!row.weekly_hint.contains("open Claude"));
+            assert!(!row.status.unwrap_or_default().contains("open Claude"));
+        }
+        #[cfg(not(target_os = "macos"))]
+        {
+            assert_eq!(row.weekly_hint, "n/a (token stale — open Claude)");
+            assert_eq!(
+                row.status.as_deref(),
+                Some("token stale — open Claude to refresh")
+            );
+        }
     }
 
     #[test]

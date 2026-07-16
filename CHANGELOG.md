@@ -6,6 +6,16 @@ Agents maintain the `[Unreleased]` section as work lands; **only the user cuts a
 
 ## [Unreleased]
 
+- **The TUI stops nudging macOS users toward the overlay (spec 014)** — the weekly line read
+  `wk n/a (enable overlay)`, advice that on macOS points at a feature which cannot work (no token
+  source) and which Anthropic's terms don't permit. It now reads `wk n/a (unsupported on macOS)`.
+  Two sibling strings had the same defect and are fixed with it: an opted-in account with a
+  stale/absent token showed `n/a (token stale — open Claude)` and a row status of `token stale —
+  open Claude to refresh` — but opening Claude refreshes into the **Keychain**, not the credentials
+  file `tok` reads, so the state could never clear. On macOS they now name the real situation.
+  Linux wording is unchanged. All three hints are now pinned by tests (they were the only unpinned
+  ones, which is why they had drifted).
+
 - **macOS support: the overlay is unsupported here, and now says so (spec 014)** — `tok` already
   worked on macOS; the local plane (usage, notional cost, burn, the reconstructed 5h window) needs
   no port, since paths resolve per-platform, the store is SQLite and `ccusage` is cross-platform.
